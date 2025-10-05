@@ -102,7 +102,7 @@ def fetch_nasa_exoplanet_data():
         backup_url = "https://raw.githubusercontent.com/OpenExoplanetCatalogue/oec_tables/master/comma_separated/open_exoplanet_catalogue.txt"
         df = pd.read_csv(backup_url)
 
-    return df
+        return df
     #else:
     #    st.error("No data found in NASA API response")
     #    return pd.DataFrame()
@@ -460,6 +460,7 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
 
