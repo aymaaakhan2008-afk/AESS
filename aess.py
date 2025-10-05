@@ -103,9 +103,9 @@ def fetch_nasa_exoplanet_data():
         df = pd.read_csv(backup_url)
 
     return df
-    else:
-        st.error("No data found in NASA API response")
-        return pd.DataFrame()
+    #else:
+    #    st.error("No data found in NASA API response")
+    #    return pd.DataFrame()
             
     except Exception as e:
         st.error(f"Error fetching data from NASA API: {str(e)}")
@@ -460,5 +460,6 @@ st.markdown(
     unsafe_allow_html=True
 
 )
+
 
 
