@@ -49,10 +49,11 @@ st.markdown("""
 def fetch_nasa_exoplanet_data():
     """
     Fetches comprehensive exoplanet data from NASA Exoplanet Archive TAP service.
-    Uses the Planetary Systems (PS) Table for all confirmed planets[citation:1][citation:7].
+    Uses the Planetary Systems (PS) Table for all confirmed planets.
+    Includes fallback dataset if NASA API is unreachable.
     """
     try:
-        # Primary query from NASA's pre-generated queries for all confirmed planets[citation:7]
+        # Primary query from NASA's TAP service
         url = "https://exoplanetarchive.ipac.caltech.edu/TAP/sync"
         query = """
         SELECT 
@@ -65,32 +66,43 @@ def fetch_nasa_exoplanet_data():
         WHERE default_flag = 1
         ORDER BY disc_year DESC
         """
-        
         params = {
             'request': "doQuery",
             'lang': "ADQL",
             'format': "json",
             'query': query
         }
-        
+
+        # Attempt to fetch live NASA data
         response = requests.get(url, params=params, timeout=30)
         response.raise_for_status()
         data = response.json()
-        
-        if 'data' in data:
+
+        # Check if response is valid
+        if 'data' in data and len(data['data']) > 0:
             df = pd.DataFrame(data['data'])
-            # Create readable column names
-            column_mapping = {
-                'pl_name': 'Planet Name', 'hostname': 'Host Star', 'discoverymethod': 'Discovery Method',
-                'disc_year': 'Discovery Year', 'pl_orbper': 'Orbital Period (days)', 
-                'pl_rade': 'Planet Radius (Earth radii)', 'pl_bmasse': 'Planet Mass (Earth mass)',
-                'pl_orbsmax': 'Orbit Semi-Major Axis (AU)', 'pl_orbeccen': 'Orbital Eccentricity',
-                'sy_dist': 'Distance from Earth (pc)', 'st_teff': 'Star Temperature (K)',
-                'st_rad': 'Star Radius (Solar radii)', 'st_mass': 'Star Mass (Solar mass)',
-                'st_lum': 'Star Luminosity (log Solar)', 'ra': 'Right Ascension', 'dec': 'Declination'
-            }
-            df.rename(columns=column_mapping, inplace=True)
-            return df
+        else:
+            raise ValueError("Empty or invalid response from NASA API")
+
+        # Create readable column names
+        column_mapping = {
+            'pl_name': 'Planet Name', 'hostname': 'Host Star', 'discoverymethod': 'Discovery Method',
+            'disc_year': 'Discovery Year', 'pl_orbper': 'Orbital Period (days)', 
+            'pl_rade': 'Planet Radius (Earth radii)', 'pl_bmasse': 'Planet Mass (Earth mass)',
+            'pl_orbsmax': 'Orbit Semi-Major Axis (AU)', 'pl_orbeccen': 'Orbital Eccentricity',
+            'sy_dist': 'Distance from Earth (pc)', 'st_teff': 'Star Temperature (K)',
+            'st_rad': 'Star Radius (Solar radii)', 'st_mass': 'Star Mass (Solar mass)',
+            'st_lum': 'Star Luminosity (log Solar)', 'ra': 'Right Ascension', 'dec': 'Declination'
+        }
+        df.rename(columns=column_mapping, inplace=True)
+
+    except Exception as e:
+        st.warning("⚠ NASA API not responding or returned no data. Loading backup dataset...")
+        # Backup dataset (Open Exoplanet Catalogue)
+        backup_url = "https://raw.githubusercontent.com/OpenExoplanetCatalogue/oec_tables/master/comma_separated/open_exoplanet_catalogue.txt"
+        df = pd.read_csv(backup_url)
+
+    return df
         else:
             st.error("No data found in NASA API response")
             return pd.DataFrame()
@@ -446,4 +458,5 @@ st.markdown(
     </div>
     """, 
     unsafe_allow_html=True
+
 )
